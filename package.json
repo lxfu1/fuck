@@ -1,0 +1,19 @@
+{
+  "name": "insight-studio",
+  "version": "1.0.2",
+  "private": true,
+  "description": "AI-powered visualization grammar decision system",
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean"
+  },
+  "keywords": ["visualization", "antv", "ai", "chart", "bi", "dashboard"],
+  "author": "Insight Studio Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
