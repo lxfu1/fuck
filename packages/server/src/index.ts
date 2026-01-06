@@ -13,6 +13,7 @@ import { dashboardRoutes } from './routes/dashboard.routes';
 import { templateRoutes } from './routes/template.routes';
 import { aiRoutes } from './routes/ai.routes';
 import { monitoringRoutes } from './routes/monitoring.routes';
+import { dataRoutes } from './routes/data.routes';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use('/api/dashboards', dashboardRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/data', dataRoutes);
 
 app.use(errorHandler);
 

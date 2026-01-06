@@ -8,24 +8,42 @@ import type {
   OptimizationSuggestion,
 } from '@insight-studio/shared';
 import { generateId } from '@insight-studio/shared';
+import { DataParser } from '../utils/data-parser';
+import { ExportService } from './export.service';
 
 export class ChartService {
   private charts: Map<string, ChartResult> = new Map();
+  private exportService = new ExportService();
 
   async generateChart(request: GenerateChartRequest): Promise<GenerateChartResponse> {
     const chartId = generateId('chart');
     
-    const config: ChartConfig = this.analyzeQuery(request.query);
+    let data = this.generateSampleData();
     
-    const recommendations: ChartRecommendation[] = [
-      {
-        id: generateId('rec'),
-        config,
-        score: 0.95,
-        reason: 'Based on your query, this chart type best represents the data trends',
-        preview: undefined,
+    if (request.dataSource?.content) {
+      data = request.dataSource.content;
+    }
+
+    const validation = DataParser.validateData(data);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    const dataStructure = DataParser.detectDataStructure(data as unknown[]);
+    const suggestedTypes = DataParser.suggestChartType(dataStructure);
+    
+    const config: ChartConfig = this.analyzeQuery(request.query, data, suggestedTypes);
+    
+    const recommendations: ChartRecommendation[] = suggestedTypes.slice(0, 3).map((type, index) => ({
+      id: generateId('rec'),
+      config: {
+        ...config,
+        type: type as ChartConfig['type'],
       },
-    ];
+      score: 0.95 - (index * 0.1),
+      reason: this.getReasonForChartType(type, dataStructure),
+      preview: undefined,
+    }));
 
     const chart: ChartResult = {
       id: chartId,
@@ -38,7 +56,7 @@ export class ChartService {
 
     this.charts.set(chartId, chart);
 
-    const explanation: ExplanationSchema = this.generateExplanation(chart);
+    const explanation: ExplanationSchema = this.generateExplanation(chart, dataStructure);
 
     return {
       recommendations,
@@ -87,10 +105,10 @@ export class ChartService {
     };
   }
 
-  private analyzeQuery(query: string): ChartConfig {
+  private analyzeQuery(query: string, data: unknown, suggestedTypes: string[]): ChartConfig {
     const lowerQuery = query.toLowerCase();
     
-    let type: ChartConfig['type'] = 'line';
+    let type: ChartConfig['type'] = (suggestedTypes[0] as ChartConfig['type']) || 'line';
     let category: ChartConfig['category'] = 'trend';
 
     if (lowerQuery.includes('趋势') || lowerQuery.includes('trend')) {
@@ -224,27 +242,23 @@ onUnmounted(() => {
     ];
   }
 
-  private generateExplanation(chart: ChartResult): ExplanationSchema {
+  private generateExplanation(chart: ChartResult, dataStructure?: ReturnType<typeof DataParser.detectDataStructure>): ExplanationSchema {
     return {
       chartId: chart.id,
       narrative: {
         title: 'Data Visualization Analysis',
-        summary: 'This chart shows the trend over time',
-        keyFindings: [
-          'Overall upward trend observed',
-          'Peak value reached in June',
-          'Significant growth between April and May',
-        ],
-        context: 'The data represents monthly metrics for the analyzed period',
+        summary: this.generateSummary(chart, dataStructure),
+        keyFindings: this.generateKeyFindings(chart, dataStructure),
+        context: 'The data represents metrics for the analyzed period',
       },
       insights: [],
       dataStory: {
-        whatHappened: 'The metrics show consistent growth throughout the period',
-        whyItMatters: 'This trend indicates positive business performance',
+        whatHappened: 'The metrics show patterns in the data',
+        whyItMatters: 'These patterns provide insights into business performance',
         whatToDoNext: [
-          'Continue monitoring the trend',
-          'Investigate factors contributing to growth',
-          'Plan resources for sustained growth',
+          'Continue monitoring trends',
+          'Investigate contributing factors',
+          'Plan data-driven strategies',
         ],
       },
       metadata: {
@@ -253,5 +267,73 @@ onUnmounted(() => {
         limitations: ['Limited historical data', 'No external factors considered'],
       },
     };
+  }
+
+  private generateSummary(chart: ChartResult, dataStructure?: ReturnType<typeof DataParser.detectDataStructure>): string {
+    const { type, category } = chart.config;
+    
+    if (dataStructure?.hasTimeSeriesData) {
+      return `This ${type} chart displays temporal trends in your data`;
+    }
+    
+    if (category === 'comparison') {
+      return `This ${type} chart compares values across different categories`;
+    }
+    
+    if (category === 'composition') {
+      return `This ${type} chart shows the composition and proportions of your data`;
+    }
+    
+    return `This ${type} chart visualizes your data for ${category} analysis`;
+  }
+
+  private generateKeyFindings(chart: ChartResult, dataStructure?: ReturnType<typeof DataParser.detectDataStructure>): string[] {
+    const findings: string[] = [];
+    
+    if (dataStructure) {
+      const numericCols = dataStructure.columns.filter(c => c.type === 'number');
+      const categoricalCols = dataStructure.columns.filter(c => c.type === 'string');
+      
+      if (numericCols.length > 0) {
+        findings.push(`Dataset contains ${numericCols.length} numeric field(s) for quantitative analysis`);
+      }
+      
+      if (categoricalCols.length > 0) {
+        findings.push(`Dataset has ${categoricalCols.length} categorical dimension(s) for segmentation`);
+      }
+      
+      if (dataStructure.hasTimeSeriesData) {
+        findings.push('Time-series data detected, enabling trend analysis');
+      }
+    }
+    
+    if (findings.length === 0) {
+      findings.push('Data successfully visualized');
+    }
+    
+    return findings;
+  }
+
+  private getReasonForChartType(type: string, dataStructure: ReturnType<typeof DataParser.detectDataStructure>): string {
+    const reasons: Record<string, string> = {
+      'line': 'Best for showing trends over time',
+      'area': 'Effective for cumulative trends and comparisons',
+      'column': 'Ideal for comparing values across categories',
+      'bar': 'Clear comparison of categorical data',
+      'pie': 'Perfect for showing proportions and composition',
+      'donut': 'Similar to pie chart with emphasis on totals',
+      'scatter': 'Reveals relationships between two variables',
+      'bubble': 'Shows three-dimensional relationships',
+      'heatmap': 'Displays patterns in large datasets',
+      'table': 'Provides detailed tabular view of data',
+    };
+    
+    let reason = reasons[type] || 'Suitable for your data structure';
+    
+    if (dataStructure.hasTimeSeriesData && ['line', 'area'].includes(type)) {
+      reason += ' with time-series data';
+    }
+    
+    return reason;
   }
 }
