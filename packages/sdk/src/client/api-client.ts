@@ -29,14 +29,15 @@ export class InsightStudioClient {
 
   constructor(config: ClientConfig) {
     this.config = config;
-    this.baseUrl = config.baseUrl || 'https://api.insight-studio.ai';
+    this.baseUrl = (config.baseUrl || 'https://api.insight-studio.ai').replace(/\/$/, '');
   }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = `${this.baseUrl}${endpoint}`;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${this.baseUrl}${cleanEndpoint}`;
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.config.apiKey}`,

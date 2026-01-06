@@ -12,6 +12,22 @@ pnpm add @insight-studio/sdk
 yarn add @insight-studio/sdk
 ```
 
+## Configuration
+
+### Base URL
+
+The SDK will automatically construct the full URL for API requests. You have two options:
+
+```tsx
+// Option 1: Use full server URL (includes /api prefix in SDK)
+baseUrl: "http://localhost:3000"  // SDK will request: http://localhost:3000/api/charts/generate
+
+// Option 2: Use proxy path (for Vite/webpack proxy)
+baseUrl: "/api"  // SDK will request: /api/charts/generate (proxied to backend)
+```
+
+**Important**: Don't include `/api` at the end of your baseUrl if you're pointing directly to the server, as the SDK already adds it.
+
 ## Usage
 
 ### React
@@ -25,6 +41,7 @@ function App() {
   return (
     <InsightStudio
       apiKey="your-api-key"
+      baseUrl="http://localhost:3000"  // Point to your server
       theme="light"
       onChartGenerate={(chart) => {
         console.log('Chart generated:', chart);

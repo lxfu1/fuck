@@ -87,6 +87,7 @@ import { InsightStudioClient } from '@insight-studio/sdk';
 
 const client = new InsightStudioClient({
   apiKey: 'your-api-key',
+  baseUrl: 'http://localhost:3000',  // Optional, defaults to production URL
 });
 
 const result = await client.generateChart({
@@ -96,6 +97,8 @@ const result = await client.generateChart({
 
 console.log(result);
 ```
+
+**Note**: The SDK automatically adds `/api` to all endpoints. So `baseUrl: 'http://localhost:3000'` will make requests to `http://localhost:3000/api/charts/generate`.
 
 ### 4. Direct API Calls
 

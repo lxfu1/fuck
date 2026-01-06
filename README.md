@@ -105,11 +105,14 @@ function App() {
   return (
     <InsightStudio
       apiKey="your-api-key"
+      baseUrl="http://localhost:3000"
       onChartGenerate={(chart) => console.log(chart)}
     />
   );
 }
 ```
+
+> **注意**: SDK 会自动在所有端点前添加 `/api` 前缀。所以 `baseUrl: 'http://localhost:3000'` 会请求 `http://localhost:3000/api/charts/generate`。
 
 ### Vue
 
@@ -117,6 +120,7 @@ function App() {
 <template>
   <InsightStudio
     :api-key="apiKey"
+    base-url="http://localhost:3000"
     @chart-generate="onChartGenerate"
   />
 </template>
