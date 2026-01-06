@@ -37,6 +37,22 @@ insight-studio/
 pnpm install
 ```
 
+### 配置 AI 服务（可选）
+
+Insight Studio 使用智谱 AI 的 GLM-4 模型提供 AI 对话功能。
+
+```bash
+# 复制环境变量模板
+cp packages/server/.env.example packages/server/.env
+
+# 编辑 .env 文件，添加你的 GLM API Key
+# GLM_API_KEY=your-glm-api-key-here
+```
+
+详细配置请参考：[GLM-4 配置指南](./docs/GLM_SETUP.md)
+
+> **注意**: 如果不配置 API Key，AI 功能会使用内置的规则引擎，不影响核心图表生成功能。
+
 ### 开发模式
 
 ```bash

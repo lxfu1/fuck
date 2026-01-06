@@ -19,6 +19,26 @@ cd insight-studio
 pnpm install
 ```
 
+## Configuration
+
+### AI Service (Optional)
+
+Insight Studio uses Zhipu AI's GLM-4 model for AI chat features.
+
+```bash
+# Copy environment template
+cp packages/server/.env.example packages/server/.env
+
+# Edit .env and add your GLM API Key
+# GLM_API_KEY=your-api-key-here
+```
+
+Get your API key from: https://open.bigmodel.cn/
+
+For detailed setup, see: [GLM-4 Setup Guide](./docs/GLM_SETUP.md)
+
+> **Note**: Without API key, AI features will use fallback responses. Core chart generation still works.
+
 ## Development
 
 ### Start All Services
